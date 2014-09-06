@@ -183,5 +183,46 @@ module JokeVM
       vm.step
       expect( vm.stack ).to eq [3]
     end
+
+    it "can construct objects and do stuff with them" do
+      object_init = Method.new([
+        VM::RETURN,
+      ])
+
+      constructor = Method.new([
+        VM::ALOAD_0,
+        VM::INVOKESPECIAL, 0, 1,
+        VM::RETURN,
+      ])
+
+      two = Method.new([
+        VM::ICONST_2,
+        VM::IRETURN,
+      ])
+
+      caller = Method.new([
+          VM::NEW, 0, 2,
+          VM::DUP,
+          VM::INVOKESPECIAL, 0, 3,
+          VM::INVOKEVIRTUAL, 0, 4,
+      ])
+
+      two_class = Class.new
+
+      vm = VM.new(
+        {
+          1 => object_init,
+          2 => two_class,
+          3 => constructor,
+          4 => two,
+          88 => caller,
+        },
+        88
+      )
+      expect( vm.stack ).to eq []
+
+      10.times { vm.step }
+      expect( vm.stack ).to eq [2]
+    end
   end
 end
