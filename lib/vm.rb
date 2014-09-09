@@ -4,6 +4,7 @@ require "frame"
 require "method"
 require "class"
 require "object"
+require "field_def"
 
 module JokeVM
   class VM
@@ -11,6 +12,7 @@ module JokeVM
 
     ALOAD_0 = 0x2a
     DUP = 0x59
+    GETFIELD = 0xb4
     GOTO = 0xa7
     IADD = 0x60
     ICONST_0 = 0x03
@@ -35,6 +37,7 @@ module JokeVM
     ISTORE_2 = 0x3d
     ISTORE_3 = 0x3e
     NEW = 0xbb
+    PUTFIELD = 0xb5
     RETURN = 0xb1
 
 
@@ -139,6 +142,18 @@ module JokeVM
         push(object)
       when RETURN
         @frame = @frames.pop
+      when PUTFIELD
+        field_def_number = nxt2
+        field_def = @constants.fetch(field_def_number)
+        value = pop
+        object = pop
+        object.instance_variable_set("@#{field_def.name}", value)
+      when GETFIELD
+        field_def_number = nxt2
+        field_def = @constants.fetch(field_def_number)
+        object = pop
+        value = object.instance_variable_get("@#{field_def.name}")
+        push(value)
       else
         raise "Unimplemented"
       end

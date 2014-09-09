@@ -224,5 +224,53 @@ module JokeVM
       10.times { vm.step }
       expect( vm.stack ).to eq [2]
     end
+
+    it "can use object fields" do
+      object_init = Method.new([
+        VM::RETURN,
+      ])
+
+      constructor = Method.new([
+        VM::ALOAD_0,
+        VM::INVOKESPECIAL, 0, 1,
+        VM::ALOAD_0,
+        VM::ICONST_2,
+        VM::PUTFIELD, 0, 5,
+        VM::RETURN,
+      ])
+
+      two = Method.new([
+        VM::ALOAD_0,
+        VM::GETFIELD, 0, 5,
+        VM::IRETURN,
+      ])
+
+      caller = Method.new([
+          VM::NEW, 0, 2,
+          VM::DUP,
+          VM::INVOKESPECIAL, 0, 3,
+          VM::INVOKEVIRTUAL, 0, 4,
+      ])
+
+      two_class = Class.new
+
+      num_field = FieldDef.new(two_class, :x)
+
+      vm = VM.new(
+        {
+          1 => object_init,
+          2 => two_class,
+          3 => constructor,
+          4 => two,
+          5 => num_field,
+          88 => caller,
+        },
+        88
+      )
+      expect( vm.stack ).to eq []
+
+      14.times { vm.step }
+      expect( vm.stack ).to eq [2]
+    end
   end
 end
