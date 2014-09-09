@@ -40,6 +40,16 @@ module JokeVM
     PUTFIELD = 0xb5
     RETURN = 0xb1
 
+    class Result < StandardError
+      attr_reader :value
+      def initialize(value)
+        @value = value
+      end
+
+      def ==(other)
+        other.is_a?(Result) && other.value == value
+      end
+    end
 
     def_delegators :@frame, :stack
     def_delegators :stack, :push, :pop
@@ -48,6 +58,14 @@ module JokeVM
       @constants = constants
       @frame = Frame.new(constants.fetch(start))
       @frames = []
+    end
+
+    def push(value)
+      if @frame
+        stack.push(value)
+      else
+        raise Result, value
+      end
     end
 
     def step
@@ -169,6 +187,12 @@ module JokeVM
       result = @frame.method.byte(@frame.pc)
       @frame.pc += 1
       result
+    end
+
+    def run
+      loop { step }
+    rescue Result => e
+      e.value
     end
   end
 end

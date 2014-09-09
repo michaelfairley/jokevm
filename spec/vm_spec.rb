@@ -7,19 +7,14 @@ module JokeVM
         VM::ICONST_2,
         VM::ICONST_2,
         VM::IADD,
+        VM::IRETURN
       ])
 
       vm = VM.new({1 => method}, 1)
-      expect( vm.stack ).to eq []
 
-      vm.step
-      expect( vm.stack ).to eq [2]
+      result = vm.run
 
-      vm.step
-      expect( vm.stack ).to eq [2, 2]
-
-      vm.step
-      expect( vm.stack ).to eq [4]
+      expect( result ).to eq 4
     end
 
     it "can branch" do
@@ -72,67 +67,12 @@ module JokeVM
         VM::IADD,
         VM::ILOAD, 4,
         VM::IADD,
+        VM::IRETURN,
       ])
 
       vm = VM.new({1 => method}, 1)
-      expect( vm.stack ).to eq []
 
-      vm.step
-      expect( vm.stack ).to eq [1]
-
-      vm.step
-      expect( vm.stack ).to eq []
-
-      vm.step
-      expect( vm.stack ).to eq [2]
-
-      vm.step
-      expect( vm.stack ).to eq []
-
-      vm.step
-      expect( vm.stack ).to eq [3]
-
-      vm.step
-      expect( vm.stack ).to eq []
-
-      vm.step
-      expect( vm.stack ).to eq [4]
-
-      vm.step
-      expect( vm.stack ).to eq []
-
-      vm.step
-      expect( vm.stack ).to eq [5]
-
-      vm.step
-      expect( vm.stack ).to eq []
-
-      vm.step
-      expect( vm.stack ).to eq [1]
-
-      vm.step
-      expect( vm.stack ).to eq [1, 2]
-
-      vm.step
-      expect( vm.stack ).to eq [3]
-
-      vm.step
-      expect( vm.stack ).to eq [3, 3]
-
-      vm.step
-      expect( vm.stack ).to eq [6]
-
-      vm.step
-      expect( vm.stack ).to eq [6, 4]
-
-      vm.step
-      expect( vm.stack ).to eq [10]
-
-      vm.step
-      expect( vm.stack ).to eq [10, 5]
-
-      vm.step
-      expect( vm.stack ).to eq [15]
+      expect( vm.run ).to eq(15)
     end
 
     it "can invoke static methods" do
@@ -150,6 +90,7 @@ module JokeVM
         VM::INVOKESTATIC, 0, 10,
         VM::INVOKESTATIC, 0, 11,
         VM::IADD,
+        VM::IRETURN,
       ])
 
       vm = VM.new(
@@ -160,28 +101,8 @@ module JokeVM
         },
         1
       )
-      expect( vm.stack ).to eq []
-
       vm.step
-      expect( vm.stack ).to eq []
-
-      vm.step
-      expect( vm.stack ).to eq [1]
-
-      vm.step
-      expect( vm.stack ).to eq [1]
-
-      vm.step
-      expect( vm.stack ).to eq []
-
-      vm.step
-      expect( vm.stack ).to eq [2]
-
-      vm.step
-      expect( vm.stack ).to eq [1, 2]
-
-      vm.step
-      expect( vm.stack ).to eq [3]
+      expect( vm.run ).to eq(3)
     end
 
     it "can construct objects and do stuff with them" do
@@ -246,10 +167,11 @@ module JokeVM
       ])
 
       caller = Method.new([
-          VM::NEW, 0, 2,
-          VM::DUP,
-          VM::INVOKESPECIAL, 0, 3,
-          VM::INVOKEVIRTUAL, 0, 4,
+        VM::NEW, 0, 2,
+        VM::DUP,
+        VM::INVOKESPECIAL, 0, 3,
+        VM::INVOKEVIRTUAL, 0, 4,
+        VM::IRETURN,
       ])
 
       two_class = Class.new
@@ -267,10 +189,7 @@ module JokeVM
         },
         88
       )
-      expect( vm.stack ).to eq []
-
-      14.times { vm.step }
-      expect( vm.stack ).to eq [2]
+      expect( vm.run ).to eq(2)
     end
   end
 end
