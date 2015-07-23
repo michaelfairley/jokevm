@@ -191,5 +191,31 @@ module JokeVM
       )
       expect( vm.run ).to eq(2)
     end
+
+    it "can pass arguments to static methods" do
+      main = Method.new([
+        VM::ICONST_1,
+        VM::ICONST_2,
+        VM::INVOKESTATIC, 0, 2,
+        VM::IRETURN,
+      ])
+
+      sub = Method.new([
+        VM::ILOAD_0,
+        VM::ILOAD_1,
+        VM::ISUB,
+        VM::IRETURN,
+      ], 2)
+
+      vm = VM.new(
+        {
+          1 => main,
+          2 => sub,
+        },
+        1
+      )
+      vm.step
+      expect( vm.run ).to eq(-1)
+    end
   end
 end

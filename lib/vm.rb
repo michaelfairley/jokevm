@@ -36,6 +36,7 @@ module JokeVM
     ISTORE_1 = 0x3c
     ISTORE_2 = 0x3d
     ISTORE_3 = 0x3e
+    ISUB = 0x64
     NEW = 0xbb
     PUTFIELD = 0xb5
     RETURN = 0xb1
@@ -124,8 +125,14 @@ module JokeVM
       when INVOKESTATIC
         method_number = nxt2
         method = @constants.fetch(method_number)
+
+        new_frame = Frame.new(method)
+        (method.arg_size - 1).downto(0) do |i|
+          new_frame.locals[i] = pop
+        end
+
         @frames.push(@frame)
-        @frame = Frame.new(method)
+        @frame = new_frame
       when INVOKEVIRTUAL
         method_number = nxt2
         method = @constants.fetch(method_number)
@@ -153,6 +160,9 @@ module JokeVM
       when ISTORE_3
         value = pop
         @frame.locals[3] = value
+      when ISUB
+        a, b = pop(2)
+        push(a - b)
       when NEW
         class_number = nxt2
         klass = @constants.fetch(class_number)
