@@ -217,5 +217,93 @@ module JokeVM
       vm.step
       expect( vm.run ).to eq(-1)
     end
+
+    it "can pass arguments to virtual methods" do
+      object_init = Method.new([
+        VM::RETURN,
+      ])
+
+      constructor = Method.new([
+        VM::ALOAD_0,
+        VM::INVOKESPECIAL, 0, 1,
+        VM::RETURN,
+      ])
+
+      main = Method.new([
+        VM::NEW, 0, 2,
+        VM::DUP,
+        VM::INVOKESPECIAL, 0, 3,
+        VM::ICONST_1,
+        VM::ICONST_2,
+        VM::INVOKEVIRTUAL, 0, 4,
+        VM::IRETURN,
+      ])
+
+      sub = Method.new([
+        VM::ILOAD_1,
+        VM::ILOAD_2,
+        VM::ISUB,
+        VM::IRETURN,
+      ], 2)
+
+      klass = Class.new
+
+      vm = VM.new(
+        {
+          1 => object_init,
+          2 => klass,
+          3 => constructor,
+          4 => sub,
+          5 => main,
+        },
+        5
+      )
+      vm.step
+      expect( vm.run ).to eq(-1)
+    end
+
+    it "can pass arguments to constructors" do
+      object_init = Method.new([
+        VM::RETURN,
+      ])
+
+      constructor = Method.new([
+        VM::ALOAD_0,
+        VM::INVOKESPECIAL, 0, 4,
+        VM::ALOAD_0,
+        VM::ILOAD_1,
+        VM::ILOAD_2,
+        VM::ISUB,
+        VM::PUTFIELD, 0, 3,
+        VM::RETURN,
+      ], 2)
+
+      main = Method.new([
+        VM::NEW, 0, 1,
+        VM::DUP,
+        VM::ICONST_1,
+        VM::ICONST_2,
+        VM::INVOKESPECIAL, 0, 2,
+        VM::GETFIELD, 0, 3,
+        VM::IRETURN,
+      ])
+
+      klass = Class.new
+
+      value = FieldDef.new(klass, :value)
+
+      vm = VM.new(
+        {
+          1 => klass,
+          2 => constructor,
+          3 => value,
+          4 => object_init,
+          5 => main,
+        },
+        5
+      )
+      vm.step
+      expect( vm.run ).to eq(-1)
+    end
   end
 end

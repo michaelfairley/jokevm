@@ -1,4 +1,5 @@
 require "forwardable"
+require "logger"
 
 require "frame"
 require "method"
@@ -7,6 +8,9 @@ require "object"
 require "field_def"
 
 module JokeVM
+  LOGGER = Logger.new(STDOUT)
+  LOGGER.level = Logger::DEBUG
+
   class VM
     extend Forwardable
 
@@ -38,6 +42,7 @@ module JokeVM
     ISTORE_3 = 0x3e
     ISUB = 0x64
     NEW = 0xbb
+    POP = 0x57
     PUTFIELD = 0xb5
     RETURN = 0xb1
 
@@ -118,10 +123,14 @@ module JokeVM
       when INVOKESPECIAL
         method_number = nxt2
         method = @constants.fetch(method_number)
-        object = pop
+
+        new_frame = Frame.new(method)
+        (method.arg_size).downto(0) do |i|
+          new_frame.locals[i] = pop
+        end
+
         @frames.push(@frame)
-        @frame = Frame.new(method)
-        @frame.locals[0] = object
+        @frame = new_frame
       when INVOKESTATIC
         method_number = nxt2
         method = @constants.fetch(method_number)
@@ -136,10 +145,14 @@ module JokeVM
       when INVOKEVIRTUAL
         method_number = nxt2
         method = @constants.fetch(method_number)
-        object = pop
+
+        new_frame = Frame.new(method)
+        (method.arg_size).downto(0) do |i|
+          new_frame.locals[i] = pop
+        end
+
         @frames.push(@frame)
-        @frame = Frame.new(method)
-        @frame.locals[0] = object
+        @frame = new_frame
       when IRETURN
         result = pop
         @frame = @frames.pop
@@ -182,6 +195,8 @@ module JokeVM
         object = pop
         value = object.instance_variable_get("@#{field_def.name}")
         push(value)
+      when POP
+        pop
       else
         raise "Unimplemented"
       end
@@ -203,6 +218,10 @@ module JokeVM
       loop { step }
     rescue Result => e
       e.value
+    rescue
+      LOGGER.debug @frame.inspect
+      LOGGER.debug @frames.inspect
+      raise
     end
   end
 end
